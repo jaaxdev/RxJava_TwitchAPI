@@ -14,6 +14,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.function.Predicate
 
 class MainActivity : AppCompatActivity() {
 
@@ -51,6 +52,7 @@ class MainActivity : AppCompatActivity() {
             .flatMap { twitch -> Observable.fromIterable(twitch.games) }
             // just -> se obtiene sólo un dato
             .flatMap { game -> Observable.just(game.name) }
+            .filter { game -> game.toString().lowercase().contains("w") }
             .subscribeOn( //indica en qué hilo se va a ejecutar la suscripción
                 Schedulers.io()) //al ser llamada de tip IO, se ejecuta en este hilo
             .observeOn(AndroidSchedulers.mainThread()) //el resultado se va a pintar sobre la UI
