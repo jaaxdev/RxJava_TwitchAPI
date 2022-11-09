@@ -3,6 +3,8 @@ package com.jaax.twitchretrofit
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import com.jaax.twitchretrofit.model.AllStreams
+import com.jaax.twitchretrofit.model.Stream
 import com.jaax.twitchretrofit.model.TopGames
 import com.jaax.twitchretrofit.network.RetrofitClient
 import com.jaax.twitchretrofit.util.Consts
@@ -10,11 +12,11 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Observer
 import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.functions.Predicate
 import io.reactivex.rxjava3.schedulers.Schedulers
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.util.function.Predicate
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,7 +27,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        getResponse()
+        //getResponse()
+        getStreams()
     }
 
     private fun getResponse() {
@@ -63,6 +66,36 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onNext(name: String) {
                     Log.i(Consts.TAG_RX, "onNext -> GAME: $name")
+                }
+
+                override fun onError(e: Throwable) {
+                    Log.i(Consts.TAG_RX, e.toString())
+                }
+
+                override fun onComplete() {
+                    Log.i(Consts.TAG_RX, "onComplete")
+                }
+
+            })
+    }
+
+    private fun getStreams() {
+        RetrofitClient.getService().getStreamsObservable()
+            .flatMap { twitch -> Observable.fromIterable(twitch.streams) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(object : Observer<Stream>{
+                override fun onSubscribe(disposable: Disposable) {
+                    Log.i(Consts.TAG_RX, "onSubscribe")
+                }
+
+                override fun onNext(stream: Stream) {
+                    if(stream.viewer_count > 10000 && stream.language == "es") {
+                        Log.i(Consts.TAG_RX, "onNext: \n" +
+                                "GAME: ${stream.game_name}\n" +
+                                "VIEWERS: ${stream.viewer_count}\n" +
+                                "LANGUAGE: ${stream.language}")
+                    }
                 }
 
                 override fun onError(e: Throwable) {
